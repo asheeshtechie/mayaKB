@@ -1,0 +1,8 @@
+# The sample knowledge base used by scripts/smoke.sh. Reads ./sources/samples (mounted at /sources).
+kb: samples
+source: {connector: local, path: /sources/samples}
+parse: {parser: local}
+chunk: {strategy: by_section, max_tokens: 512, overlap_tokens: 50}
+ner: {extractor: spacy, model: en_core_web_sm, labels: [PERSON, ORG, GPE, DATE]}
+embed: {embedder: ollama, model: nomic-embed-text}
+index: {backend: postgres, text_search_language: english}

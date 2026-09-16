@@ -1,0 +1,11 @@
+# EC2 GPU instances: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# The host needs the NVIDIA driver and the NVIDIA Container Toolkit.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

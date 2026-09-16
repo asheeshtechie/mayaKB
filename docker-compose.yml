@@ -1,0 +1,71 @@
+name: mayakb
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: mayakb
+      POSTGRES_USER: mayakb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mayakb -d mayakb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    # no ports: reachable only by the other containers
+
+  ollama:
+    image: ollama/ollama
+    profiles: ["ollama"]
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+    # no ports: Ollama has no authentication and must never be exposed
+
+  ollama-pull:
+    image: ollama/ollama
+    profiles: ["ollama"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      MODELS: ${MAYAKB_OLLAMA_MODELS:-nomic-embed-text}
+    entrypoint: ["/bin/sh", "-c", "for m in $$MODELS; do ollama pull $$m; done"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: mayakb:latest
+    profiles: ["cli"]  # run commands with: docker compose run --rm app mayakb ...
+    environment:
+      MAYAKB_DATABASE_URL: postgresql://mayakb:${POSTGRES_PASSWORD}@db:5432/mayakb
+      MAYAKB_OLLAMA_URL: ${MAYAKB_OLLAMA_URL:-http://ollama:11434}
+      LLAMA_CLOUD_API_KEY: ${LLAMA_CLOUD_API_KEY:-}
+    volumes:
+      - artifacts:/data
+      - hf-cache:/home/mayakb/.cache/huggingface
+      - ./configs:/configs:ro
+      - ./sources:/sources:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama-pull:
+        condition: service_completed_successfully
+        required: false
+
+volumes:
+  pgdata:
+  ollama-models:
+  artifacts:
+  hf-cache:
