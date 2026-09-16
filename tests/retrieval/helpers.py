@@ -1,5 +1,19 @@
 from mayakb.retrieval.fusion import Candidate
+from mayakb.retrieval.search import Searcher
 from mayakb.storage.search.base import Hit
+from tests.fakes import HashEmbedder, OverlapReranker
+
+DOCS = {
+    "mem://docs/refunds.md": (
+        "# Refunds\n\nRefunds are issued within 30 days of the return.\n\n"
+        "# Warranty\n\nThe warranty covers manufacturing defects for two years."
+    ),
+    "mem://docs/shipping.md": (
+        "# Shipping\n\nOrders ship from Berlin within two days.\n\n"
+        "# Returns\n\nReturns need the original receipt."
+    ),
+    "mem://archive/old-refunds.md": "# Old refund rules\n\nRefunds used to take 60 days.",
+}
 
 
 def hit(chunk_id: str, score: float = 1.0, text: str | None = None, doc_id: str = "d1", position: int = 0,
@@ -18,3 +32,10 @@ def candidate(chunk_id: str, *, dense_rank=None, dense_score=None, keyword_rank=
         keyword_rank=keyword_rank, keyword_score=keyword_score, rerank_score=rerank_score,
     )
 
+
+def make_searcher(corpus, embedder=None, reranker=None, **retrieval) -> Searcher:
+    """A Searcher over the `corpus` fixture; keyword args override retrieval config fields."""
+    kb, backend = corpus
+    if retrieval:
+        kb = kb.model_copy(update={"retrieval": kb.retrieval.model_copy(update=retrieval)})
+    return Searcher(kb, backend, embedder or HashEmbedder(), reranker or OverlapReranker())

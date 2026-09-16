@@ -17,6 +17,7 @@ from mayakb.ingest.embedders.base import Embedder
 from mayakb.ingest.ner.base import EntityExtractor
 from mayakb.ingest.parsers.base import Parser
 from mayakb.ingest.parsers.local import LocalParser
+from mayakb.retrieval.rerankers.base import Reranker
 
 
 @register("connector", "fake")
@@ -104,3 +105,20 @@ def make_kb(docs: dict[str, str] | None = None, **sections) -> KBConfig:
     return KBConfig.model_validate(data)
 
 
+
+@register("reranker", "overlap")
+class OverlapReranker(Reranker):
+    """Share of query words found in the text. Records every call in `calls`."""
+
+    version = "1"
+    calls: list[tuple[str, list[str]]] = []
+
+    def __init__(self, fail: bool = False):
+        self.fail = fail
+
+    def score(self, query, texts):
+        OverlapReranker.calls.append((query, list(texts)))
+        if self.fail:
+            raise RuntimeError("reranker is down")
+        query_words = set(words(query))
+        return [len(query_words & set(words(t))) / len(query_words) if query_words else 0.0 for t in texts]
