@@ -1,0 +1,23 @@
+# One file per knowledge base: configs/<kb>.yaml. The file name must match `kb`.
+# Secrets and connection details come from environment variables, never from this file.
+kb: example
+source: {connector: s3, bucket: acme-docs, prefix: reports/}
+parse: {parser: local}                  # or llamaparse (needs LLAMA_CLOUD_API_KEY)
+chunk: {strategy: by_section, max_tokens: 512, overlap_tokens: 50}
+ner: {extractor: spacy, model: en_core_web_sm, labels: [PERSON, ORG, PRODUCT, DATE]}
+embed: {embedder: ollama, model: nomic-embed-text}
+index: {backend: postgres, text_search_language: english}
+retrieval:
+  fusion: rrf
+  token_budget: 3000
+  reranker: {reranker: cross_encoder, model: cross-encoder/ms-marco-MiniLM-L-6-v2}
+  beam:
+    policy: adaptive
+    depth: 50
+    min_beam: 5
+    max_beam: 30
+    agree_top: 20
+    dense_rel: 0.9
+    keyword_rel: 0.6
+    fallback_widen: false
+  cut: {min_k: 2, max_k: 10, min_score: 0.3, relative_to_top: 0.5}
