@@ -1,14 +1,21 @@
 """Contract tests every SearchBackend must pass."""
 
+import warnings
+
 import pytest
 
 from mayakb.storage.search.base import Filters, IndexRow, index_table_name
 from mayakb.storage.search.memory import InMemorySearchBackend
+from mayakb.storage.search.postgres import PostgresSearchBackend
 
 
-@pytest.fixture(params=["memory"])
+@pytest.fixture(params=["memory", pytest.param("postgres", marks=pytest.mark.postgres)])
 def backend(request):
-    return InMemorySearchBackend()
+    if request.param == "memory":
+        return InMemorySearchBackend()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # older pgvector in local test databases
+        return PostgresSearchBackend(request.getfixturevalue("pg_pool"))
 
 
 def row(chunk_id, text, embedding, doc_id="d1", uri="s3://docs/a.md", position=0, entities=(), acl=None):
