@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-16
 **Baseline:** v0.1 on branch `feat/mayakb-v0.1`. All 27 plan tasks are done: 189 tests pass, and the Docker smoke test passes.
-**Related:** [design](specs/2026-09-16-mayakb-design.md) · [v0.1 plan](plans/2026-09-16-mayakb-v0.1.md)
+**Related:** [design](../specs/2026-09-16-mayakb-design.md) · [v0.1 plan](../plans/2026-09-16-mayakb-v0.1.md)
 
 **Priority:**
 - **P1:** fix before relying on search results
